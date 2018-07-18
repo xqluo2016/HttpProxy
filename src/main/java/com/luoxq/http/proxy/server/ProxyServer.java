@@ -97,7 +97,7 @@ public class ProxyServer extends Thread {
         InputStream sin = sSock.getInputStream();
         OutputStream sout = sSock.getOutputStream();
 
-        sout.write(firstLine.getBytes());
+        sout.write(firstLine.replaceFirst("http:\\/\\/[^\\/]+","").getBytes());
 
         doTransfer(sin, sout);
     }
