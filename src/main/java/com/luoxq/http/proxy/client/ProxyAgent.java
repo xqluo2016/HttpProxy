@@ -1,24 +1,36 @@
 package com.luoxq.http.proxy.client;
 
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
-
-import javax.net.ServerSocketFactory;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocketFactory;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 
 import static com.luoxq.http.proxy.Common.*;
-import static com.luoxq.http.proxy.Common.transfer;
 
 public class ProxyAgent extends Thread {
 
     static String server;
     static int port;
+    static SSLSocketFactory sslSocketFactory;
+    Socket cSock;
+    Socket sSock;
+    InputStream cin;
+    OutputStream cout;
+
+    public ProxyAgent(Socket s) {
+        this.cSock = s;
+    }
 
     public static void main(String[] args) throws Exception {
 
@@ -30,21 +42,11 @@ public class ProxyAgent extends Thread {
         server = args[0];
         port = Integer.valueOf(args[1]);
 
-        setDefaultProperties("javax.net.ssl.keyStore", "keystore");
-        setDefaultProperties("javax.net.ssl.keyStorePassword", "changeit");
-        setDefaultProperties("javax.net.ssl.trustStore", "keystore");
-        setDefaultProperties("javax.net.ssl.trustStorePassword", "changeit");
-
+        sslSocketFactory = getSslSocketFactory();
 
         ServerSocket ss;
         Integer localPort = Integer.valueOf(args[2]);
-
-        if (args.length > 3 && "secure".equalsIgnoreCase(args[3])) {
-            ss = SSLServerSocketFactory.getDefault()
-                    .createServerSocket(localPort);
-        } else {
-            ss = ServerSocketFactory.getDefault().createServerSocket(localPort);
-        }
+        ss = ServerSocketFactory.getDefault().createServerSocket(localPort);
         ss.setReceiveBufferSize(1024 * 1024);
         while (true) {
             Socket s = ss.accept();
@@ -52,13 +54,22 @@ public class ProxyAgent extends Thread {
         }
     }
 
-    Socket cSock;
-    Socket sSock;
-    InputStream cin;
-    OutputStream cout;
+    static private SSLSocketFactory getSslSocketFactory() throws NoSuchAlgorithmException, KeyManagementException {
+        SSLContext ssl_ctx = SSLContext.getInstance("TLS");
+        TrustManager[] certs = new TrustManager[]{new X509TrustManager() {
+            public X509Certificate[] getAcceptedIssuers() {
+                return null;
+            }
 
-    public ProxyAgent(Socket s) {
-        this.cSock = s;
+            public void checkClientTrusted(X509Certificate[] certs, String t) {
+            }
+
+            public void checkServerTrusted(X509Certificate[] certs, String t) {
+            }
+        }};
+        ssl_ctx.init(null, certs, new SecureRandom());
+
+        return ssl_ctx.getSocketFactory();
     }
 
     public void run() {
@@ -78,8 +89,8 @@ public class ProxyAgent extends Thread {
         }
     }
 
-    private void doConnect() throws UnknownHostException, IOException {
-        sSock = SSLSocketFactory.getDefault().createSocket(server, port);
+    private void doConnect() throws Exception {
+        sSock = sslSocketFactory.createSocket(server, port);
         sSock.setReceiveBufferSize(1024 * 1024);
         InputStream sin = sSock.getInputStream();
         OutputStream sout = sSock.getOutputStream();
