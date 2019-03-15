@@ -5,7 +5,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -73,9 +72,8 @@ public class ProxyAgent extends Thread {
     }
 
     public void run() {
-
         try {
-            cin = new BufferedInputStream(cSock.getInputStream());
+            cin = cSock.getInputStream();
             cout = cSock.getOutputStream();
             doConnect();
         } catch (Exception ex) {
