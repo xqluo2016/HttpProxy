@@ -4,4 +4,4 @@ keystore
 *.sh
 *.tar
 *.log
-HttpProxy.iml
+*.iml
