@@ -31,6 +31,9 @@ public class ProxyAgent extends Thread {
         this.cSock = s;
     }
 
+    /**
+     * Start a Local port with Non-SSL service and proxy all data to a remote SSL server socket.
+     */
     public static void main(String[] args) throws Exception {
 
         if (args.length < 3) {

@@ -12,6 +12,9 @@ import javax.net.ssl.SSLServerSocketFactory;
 
 import static com.luoxq.http.proxy.Common.*;
 
+/**
+ * Open a SSL TCP port and provide the HTTP Proxy service.
+ */
 public class ProxyServer extends Thread {
 
     public static void main(String[] args) throws Exception {
